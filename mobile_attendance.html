@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2>📱 Mobile Attendance</h2>
+
+<video id="video" autoplay playsinline width="320"></video>
+<br><br>
+<button onclick="capture()">Mark Attendance</button>
+
+<h3 id="result"></h3>
+
+<script>
+const video = document.getElementById("video");
+
+// open phone camera
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    video.srcObject = stream;
+});
+
+function capture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    const image = canvas.toDataURL("image/jpeg");
+
+    fetch("/api/recognize/{{ class_id }}", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({image: image})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "ok"){
+            document.getElementById("result").innerText =
+                "Marked: " + data.name;
+        }
+        else if(data.status === "no_face"){
+            document.getElementById("result").innerText =
+                "No face detected";
+        }
+        else{
+            document.getElementById("result").innerText = "Error";
+        }
+    });
+}
+</script>
+
+<br><br>
+<a href="/class/{{ class_id }}">⬅ Back</a>
+
+{% endblock %}

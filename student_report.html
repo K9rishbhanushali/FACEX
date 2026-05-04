@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Report - {{ name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10; --card: #121929; --border: #1c2740;
+    --accent: #00d4ff; --accent2: #7c3aed;
+    --green: #00e5a0; --red: #ff4f6a; --yellow: #ffd060;
+    --text: #e2e8f5; --muted: #4a5878;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 40px 20px;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none; z-index: 0;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.12; }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent2); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent); bottom: -100px; left: -80px; }
+  .page { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; }
+
+  .back-link { color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s; margin-bottom: 16px; }
+  .back-link:hover { color: var(--accent); }
+  .eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.4rem,5vw,3.8rem); letter-spacing: 0.04em; line-height: 1; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 24px; }
+
+  .flash-wrap { display: grid; gap: 10px; margin-bottom: 18px; }
+  .flash { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+  .flash.success { color: var(--green); background: rgba(0,229,160,0.08); border-color: rgba(0,229,160,0.25); }
+  .flash.danger { color: var(--red); background: rgba(255,79,106,0.08); border-color: rgba(255,79,106,0.25); }
+  .flash.warning { color: var(--yellow); background: rgba(255,208,96,0.08); border-color: rgba(255,208,96,0.25); }
+  .flash.info { color: var(--accent); background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.25); }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; margin-bottom: 32px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; position: relative; overflow: hidden; }
+  .card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--c, var(--accent)); }
+  .card-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .card-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--c, var(--accent)); line-height: 1; }
+
+  .progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; }
+  .progress-header { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-bottom: 12px; }
+  .bar-bg { background: var(--border); border-radius: 999px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width 1.2s ease; }
+  .bar-fill.safe { background: linear-gradient(90deg, var(--green), #70ffb8); }
+  .bar-fill.risk { background: linear-gradient(90deg, var(--red), #ff9b9b); }
+  .threshold-note { margin-top: 8px; font-family: 'DM Mono', monospace; font-size: 0.7rem; }
+  .threshold-note.safe { color: var(--green); }
+  .threshold-note.risk { color: var(--red); }
+
+  .help-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 24px; }
+  .help-card h2 { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .help-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 28px; }
+  .table-header { padding: 16px 22px; font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .table-header span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); display: inline-block; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 12px 20px; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,212,255,0.04); }
+  td { padding: 13px 20px; font-family: 'DM Mono', monospace; font-size: 0.83rem; vertical-align: middle; }
+  .lec-num { color: var(--muted); font-size: 0.75rem; }
+  .date-col { color: var(--text); }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; }
+  .badge.present { background: rgba(0,229,160,0.12); color: var(--green); border: 1px solid rgba(0,229,160,0.3); }
+  .badge.absent  { background: rgba(255,79,106,0.12); color: var(--red); border: 1px solid rgba(255,79,106,0.3); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .edit-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .edit-select { background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 0.76rem; }
+  .save-btn { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 0.74rem; cursor: pointer; }
+  .save-btn:hover { background: #00b8db; }
+
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { padding: 11px 22px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00b8db; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    .orb, .actions, .back-link, body::before, .help-card, .flash-wrap, .edit-form { display: none; }
+    .card, .progress-card, .table-card { border: 1px solid #ccc; background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="page">
+
+  <a class="back-link" href="/class/{{ class_id }}">Back to Class</a>
+  <div class="eyebrow">Individual Report</div>
+  <h1>{{ name }}</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap">
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="summary">
+    <div class="card" style="--c: var(--accent);">
+      <div class="card-label">Total Lectures</div>
+      <div class="card-value">{{ total }}</div>
+    </div>
+    <div class="card" style="--c: var(--green);">
+      <div class="card-label">Present</div>
+      <div class="card-value">{{ present }}</div>
+    </div>
+    <div class="card" style="--c: var(--red);">
+      <div class="card-label">Absent</div>
+      <div class="card-value">{{ total - present }}</div>
+    </div>
+    <div class="card" style="--c: {% if percentage >= 75 %}var(--green){% elif percentage >= 50 %}var(--yellow){% else %}var(--red){% endif %};">
+      <div class="card-label">Attendance %</div>
+      <div class="card-value">{{ percentage }}%</div>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-header">
+      <span>Attendance Progress</span>
+      <span>{{ percentage }}% out of 75% required</span>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill {% if percentage >= 75 %}safe{% else %}risk{% endif %}" style="width: {{ percentage }}%;"></div>
+    </div>
+    <div class="threshold-note {% if percentage >= 75 %}safe{% else %}risk{% endif %}">
+      {% if percentage >= 75 %}
+        Attendance is satisfactory - above 75% threshold
+      {% else %}
+        Below 75% threshold - defaulter risk
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="help-card">
+    <h2>Teacher Edit</h2>
+    <p>Use the per-lecture status editor below to mark a late student as present or correct any missed automatic attendance entry.</p>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header"><span></span> Lecture-wise Attendance Record</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Lecture No.</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Edit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td class="lec-num">Lecture {{ rec.lecture_no }}</td>
+          <td class="date-col">{{ rec.date }}</td>
+          <td>
+            <span class="badge {{ rec.status | lower }}">
+              <span class="dot"></span>{{ rec.status }}
+            </span>
+          </td>
+          <td>
+            <form class="edit-form" method="POST" action="">
+              <input type="hidden" name="lecture_no" value="{{ rec.lecture_no }}">
+              <select class="edit-select" name="status">
+                <option value="Present" {% if rec.status == 'Present' %}selected{% endif %}>Present</option>
+                <option value="Absent" {% if rec.status == 'Absent' %}selected{% endif %}>Absent</option>
+              </select>
+              <button class="save-btn" type="submit">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="window.print()">Print Report</button>
+    <a class="btn btn-ghost" href="/class/{{ class_id }}">Back to Class</a>
+  </div>
+
+</div>
+</body>
+</html>

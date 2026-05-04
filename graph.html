@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Graph</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0e1420;
+    --card: #121929;
+    --border: #1c2740;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #00e5a0;
+    --blue: #38bdf8;
+    --yellow: #ffd060;
+    --red: #ff4f6a;
+    --text: #e2e8f5;
+    --muted: #4a5878;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridPan 20s linear infinite;
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes gridPan { 0% { transform: translate(0,0); } 100% { transform: translate(50px,50px); } }
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.15; }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent2); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent); bottom: -100px; left: -80px; }
+
+  .page { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Header */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; animation: slideDown 0.6s ease both; }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+  .eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.8rem,6vw,4.5rem); letter-spacing: 0.04em; line-height: 1; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.06em; transition: all 0.2s; }
+  .back-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.05); }
+
+  /* Big summary cards */
+  .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 36px; animation: slideDown 0.6s 0.1s ease both; opacity: 0; animation-fill-mode: forwards; }
+  .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px 28px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+  .summary-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--sc-color, var(--accent)); }
+  .summary-card::before { content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 50%; background: var(--sc-color, var(--accent)); opacity: 0.06; transform: translate(20px, -20px); }
+  .sc-icon { font-size: 1.6rem; margin-bottom: 4px; }
+  .sc-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .sc-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; color: var(--sc-color, var(--accent)); line-height: 1; }
+  .sc-sub { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+
+  /* Color legend */
+  .legend-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; animation: slideDown 0.6s 0.15s ease both; opacity: 0; animation-fill-mode: forwards; }
+  .legend-pill { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px; font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Charts */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 28px; animation: slideUp 0.7s 0.2s ease both; opacity: 0; animation-fill-mode: forwards; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; position: relative; overflow: hidden; }
+  .chart-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.35; }
+  .card-title { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
+  .card-title span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); display: inline-block; }
+
+  /* Student cards */
+  .students-section { animation: slideUp 0.7s 0.3s ease both; opacity: 0; animation-fill-mode: forwards; }
+  .section-title { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .section-title span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); display: inline-block; }
+  .students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+
+  .stu-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+  .stu-card:hover { transform: translateY(-3px); border-color: var(--cc); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .stu-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--cc); }
+  .stu-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #fff; margin-bottom: 10px; }
+  .stu-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stu-meta { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-bottom: 14px; }
+  .stu-pct-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 8px; }
+  .stu-pct-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stu-pct-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; color: var(--cc); line-height: 1; }
+  .pct-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .pct-bar { height: 100%; border-radius: 3px; background: var(--cc); width: 0; transition: width 1.3s ease; }
+  .stu-badge { padding: 3px 10px; border-radius: 6px; font-size: 0.62rem; font-family: 'DM Mono', monospace; display: inline-block; border: 1px solid; }
+
+  /* Donut */
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .donut-canvas-wrap { position: relative; width: 200px; height: 200px; }
+  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .donut-pct { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; color: var(--text); line-height: 1; }
+  .donut-sub { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .dl-row { display: flex; align-items: center; gap: 10px; }
+  .dl-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .dl-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); flex: 1; }
+  .dl-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--text); }
+
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="eyebrow">📊 Class Analytics</div>
+      <h1>Attendance Graph</h1>
+    </div>
+    <a class="back-btn" href="/class/{{ class_id }}">← Back to Class</a>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-row">
+    <div class="summary-card" style="--sc-color: var(--accent);">
+      <div class="sc-icon">👥</div>
+      <div class="sc-label">Total Students</div>
+      <div class="sc-value">{{ names|length }}</div>
+      <div class="sc-sub">enrolled in class</div>
+    </div>
+    <div class="summary-card" style="--sc-color: var(--accent2);">
+      <div class="sc-icon">📚</div>
+      <div class="sc-label">Total Lectures</div>
+      <div class="sc-value">{{ total_lectures }}</div>
+      <div class="sc-sub">lectures held so far</div>
+    </div>
+    <div class="summary-card" style="--sc-color: var(--green);">
+      <div class="sc-icon">✅</div>
+      <div class="sc-label">Highest Attendance</div>
+      <div class="sc-value" id="maxPct">-</div>
+      <div class="sc-sub" id="maxName">-</div>
+    </div>
+    <div class="summary-card" style="--sc-color: var(--yellow);">
+      <div class="sc-icon">📈</div>
+      <div class="sc-label">Class Average</div>
+      <div class="sc-value" id="avgPct">-</div>
+      <div class="sc-sub">across all students</div>
+    </div>
+    <div class="summary-card" style="--sc-color: var(--red);">
+      <div class="sc-icon">⚠️</div>
+      <div class="sc-label">Defaulters (< 75%)</div>
+      <div class="sc-value" id="defaulterCount">-</div>
+      <div class="sc-sub">students at risk</div>
+    </div>
+  </div>
+
+  <!-- Color Legend -->
+  <div class="legend-row">
+    <div class="legend-pill"><div class="legend-dot" style="background:#00e5a0;"></div>75%+ — Safe</div>
+    <div class="legend-pill"><div class="legend-dot" style="background:#38bdf8;"></div>50–74% — Moderate</div>
+    <div class="legend-pill"><div class="legend-dot" style="background:#ffd060;"></div>30–49% — Warning</div>
+    <div class="legend-pill"><div class="legend-dot" style="background:#ff4f6a;"></div>&lt;30% — Critical</div>
+  </div>
+
+  <!-- Bar Chart + Donut -->
+  <div class="charts-grid">
+
+    <div class="chart-card">
+      <div class="card-title"><span></span> Attendance % Per Student</div>
+      <canvas id="barChart" height="260"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-title"><span></span> Distribution Breakdown</div>
+      <div class="donut-wrap">
+        <div class="donut-canvas-wrap">
+          <canvas id="donutChart"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct" id="donutAvg">-</div>
+            <div class="donut-sub">avg %</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#00e5a0;"></div><div class="dl-label">Safe (75%+)</div><div class="dl-val" id="d-safe">0</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#38bdf8;"></div><div class="dl-label">Moderate (50–74%)</div><div class="dl-val" id="d-mod">0</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#ffd060;"></div><div class="dl-label">Warning (30–49%)</div><div class="dl-val" id="d-warn">0</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#ff4f6a;"></div><div class="dl-label">Critical (&lt;30%)</div><div class="dl-val" id="d-crit">0</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Per-Student Cards -->
+  <div class="students-section">
+    <div class="section-title"><span></span> Individual Student Breakdown</div>
+    <div class="students-grid" id="studentCards"></div>
+  </div>
+
+</div>
+
+<script>
+const names         = {{ names        | tojson }};
+const counts        = {{ counts       | tojson }};
+const percentages   = {{ percentages  | tojson }};
+const totalLectures = {{ total_lectures }};
+
+// Color logic: green 75+, blue 50-74, yellow 30-49, red <30
+function pctColor(pct) {
+  if (pct >= 75) return { hex: "#00e5a0", css: "var(--green)",  rgba: "rgba(0,229,160,0.75)",  badge: { bg: "rgba(0,229,160,0.12)",  border: "rgba(0,229,160,0.4)",  text: "#00e5a0", label: "✓ Safe" } };
+  if (pct >= 50) return { hex: "#38bdf8", css: "var(--blue)",   rgba: "rgba(56,189,248,0.75)", badge: { bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.4)", text: "#38bdf8", label: "↗ Moderate" } };
+  if (pct >= 30) return { hex: "#ffd060", css: "var(--yellow)", rgba: "rgba(255,208,96,0.75)", badge: { bg: "rgba(255,208,96,0.12)",  border: "rgba(255,208,96,0.4)",  text: "#ffd060", label: "⚠ Warning" } };
+                 return { hex: "#ff4f6a", css: "var(--red)",    rgba: "rgba(255,79,106,0.75)",  badge: { bg: "rgba(255,79,106,0.12)",  border: "rgba(255,79,106,0.4)",  text: "#ff4f6a", label: "✕ Critical" } };
+}
+
+// Stat chips
+const hasData = percentages.length > 0 && totalLectures > 0;
+const maxPct = hasData ? Math.max(...percentages) : 0;
+const maxIdx = hasData ? percentages.indexOf(maxPct) : -1;
+const avgPct = percentages.length
+  ? (percentages.reduce((a,b)=>a+b,0) / percentages.length).toFixed(1)
+  : 0;
+const defCount = percentages.filter(p => p < 75).length;
+
+document.getElementById("maxPct").textContent = maxPct + "%";
+document.getElementById("maxName").textContent = hasData ? (names[maxIdx] || "-") : "No attendance yet";
+document.getElementById("avgPct").textContent = avgPct + "%";
+document.getElementById("defaulterCount").textContent = defCount;
+document.getElementById("donutAvg").textContent = avgPct + "%";
+
+// Donut distribution
+let safe=0, mod=0, warn=0, crit=0;
+percentages.forEach(p => {
+  if (p >= 75) safe++;
+  else if (p >= 50) mod++;
+  else if (p >= 30) warn++;
+  else crit++;
+});
+document.getElementById("d-safe").textContent = safe;
+document.getElementById("d-mod").textContent  = mod;
+document.getElementById("d-warn").textContent = warn;
+document.getElementById("d-crit").textContent = crit;
+
+// Bar Chart
+const bCtx = document.getElementById("barChart").getContext("2d");
+new Chart(bCtx, {
+  type: "bar",
+  data: {
+    labels: names,
+    datasets: [{
+      label: "Attendance %",
+      data: percentages,
+      backgroundColor: percentages.map(p => pctColor(p).rgba),
+      borderColor:     percentages.map(p => pctColor(p).hex),
+      borderWidth: 2,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 1100, easing: "easeOutQuart", delay: (c) => c.dataIndex * 70 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#121929",
+        borderColor: "#1c2740",
+        borderWidth: 1,
+        titleFont: { family: "'DM Mono'", size: 11 },
+        bodyFont:  { family: "'DM Sans'", size: 13, weight: "600" },
+        titleColor: "#4a5878",
+        bodyColor: "#e2e8f5",
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          title: (items) => items[0].label,
+          label: (item)  => `  ${item.raw}%  (${counts[item.dataIndex]} / ${totalLectures} lectures)`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: "#4a5878", font: { family: "'DM Sans'", size: 11 }, maxRotation: 35 },
+        grid:  { color: "rgba(255,255,255,0.03)" },
+        border:{ color: "#1c2740" }
+      },
+      y: {
+        beginAtZero: true, max: 100,
+        ticks: { color: "#4a5878", font: { family: "'DM Mono'", size: 10 }, callback: v => v + "%" },
+        grid:  { color: (ctx) => ctx.tick.value === 75 ? "rgba(255,208,96,0.35)" : "rgba(255,255,255,0.05)" },
+        border:{ color: "#1c2740" }
+      }
+    }
+  }
+});
+
+// Donut Chart
+const dCtx = document.getElementById("donutChart").getContext("2d");
+new Chart(dCtx, {
+  type: "doughnut",
+  data: {
+    labels: ["Safe 75%+", "Moderate 50-74%", "Warning 30-49%", "Critical <30%"],
+    datasets: [{
+      data: [safe, mod, warn, crit],
+      backgroundColor: ["#00e5a0","#38bdf8","#ffd060","#ff4f6a"],
+      borderWidth: 0,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: "72%",
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: "#121929",
+      borderColor: "#1c2740",
+      borderWidth: 1,
+      titleColor: "#e2e8f5",
+      bodyColor: "#4a5878",
+    }}
+  }
+});
+
+// Student Cards
+const grid = document.getElementById("studentCards");
+names.forEach((name, i) => {
+  const pct   = percentages[i];
+  const count = counts[i];
+  const c     = pctColor(pct);
+
+  const card = document.createElement("div");
+  card.className = "stu-card";
+  card.style.setProperty("--cc", c.hex);
+  card.innerHTML = `
+    <div class="stu-avatar">${name.charAt(0).toUpperCase()}</div>
+    <div class="stu-name">${name}</div>
+    <div class="stu-meta">${count} / ${totalLectures} lectures attended</div>
+    <div class="stu-pct-row">
+      <div class="stu-pct-label">Attendance</div>
+      <div class="stu-pct-value">${pct}%</div>
+    </div>
+    <div class="pct-bar-bg"><div class="pct-bar" data-pct="${pct}"></div></div>
+    <span class="stu-badge" style="background:${c.badge.bg};border-color:${c.badge.border};color:${c.badge.text};">${c.badge.label}</span>
+  `;
+  grid.appendChild(card);
+});
+
+// Animate bars
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    document.querySelectorAll(".pct-bar").forEach(b => b.style.width = b.dataset.pct + "%");
+  }, 400);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+flask
+opencv-python
+numpy
+pandas
+openpyxl
+pyttsx3
+insightface
+ultralytics
+onnxruntime

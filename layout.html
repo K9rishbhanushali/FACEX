@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; min-height: 100vh; background: #0f172a; color: #fff; }
+        .sidebar { width: 250px; background: #111827; padding: 30px 20px; position: fixed; height: 100vh; }
+        .sidebar h2 { margin-bottom: 40px; color: #3b82f6; }
+        .sidebar a { display:block; color:#cbd5e1; text-decoration:none; padding:12px; margin-bottom:10px; border-radius:10px; transition:0.2s; }
+        .sidebar a:hover { background:#1f2937; color:#3b82f6; transform: translateX(5px); }
+        .main { margin-left: 250px; width: 100%; padding: 35px; }
+        .alert { padding: 12px 15px; border-radius: 10px; margin-bottom: 15px; font-weight: 500; }
+        .alert-success { background:#22c55e; }
+        .alert-danger { background:#ef4444; }
+        .alert-warning { background:#facc15; color:#111; }
+        input { padding: 10px; border-radius: 8px; border: 0; margin-right: 8px; }
+        button { padding: 10px 16px; border-radius: 8px; border: 0; background:#3b82f6; color:#fff; cursor:pointer; }
+        button:hover { background:#2563eb; }
+        a { color: #93c5fd; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>FaceX</h2>
+    <a href="/dashboard"><i class="fa fa-home"></i> Dashboard</a>
+    <a href="/dashboard"><i class="fa fa-book"></i> Classes</a>
+    <a href="/logout"><i class="fa fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>
+ 

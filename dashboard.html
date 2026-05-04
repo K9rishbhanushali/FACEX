@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div style="background:#22c55e;padding:10px;border-radius:8px;margin-bottom:10px;">
+      {% for msg in messages %}
+        {{ msg }}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+<style>
+.stat-card {
+    background: linear-gradient(135deg,#1e293b,#0f172a);
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+}
+.big-number {
+    font-size: 40px;
+    font-weight: 600;
+}
+.class-card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 16px;
+}
+</style>
+
+<h1 style="margin-bottom: 24px;">Welcome To FaceX 👋</h1>
+
+<!-- STATS -->
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:18px;
+margin-bottom:35px;
+">
+
+    <div class="stat-card">
+        <h3>Total Classes</h3>
+        <div class="big-number">{{ classes|length }}</div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Total Students</h3>
+        <div class="big-number">{{ total_students }}</div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Today's Attendance</h3>
+        <div class="big-number">{{ today_attendance }}</div>
+    </div>
+
+</div>
+
+<!-- CREATE CLASS -->
+<div class="class-card">
+    <h2>Create New Class</h2>
+
+    <form method="POST"
+          action="/create_class"
+          style="margin-top: 15px;">
+
+        <input type="text"
+               name="class_name"
+               placeholder="Class Name"
+               required>
+
+        <input type="text"
+               name="subject"
+               placeholder="Subject"
+               required>
+
+        <button type="submit">Create Class</button>
+
+    </form>
+</div>
+
+<!-- CLASS LIST -->
+<h2 style="margin-top: 28px;">My Classes</h2>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:18px;
+margin-top:14px;
+">
+
+{% for class in classes %}
+<div class="class-card">
+
+    <h3>{{ class['class_name'] }}</h3>
+    <p>{{ class['subject'] }}</p>
+
+    <br>
+
+    <!-- OPEN -->
+    <a href="/class/{{ class['id'] }}">
+        <button>Open</button>
+    </a>
+
+    <!-- DELETE -->
+    <form method="POST"
+          action="/delete_class/{{ class['id'] }}"
+          style="margin-top:10px;">
+
+        <button style="background:#ef4444;"
+                onclick="return confirm('Delete this class?')">
+            Delete
+        </button>
+
+    </form>
+
+</div>
+{% endfor %}
+
+</div>
+
+{% endblock %}

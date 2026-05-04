@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+.panel-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    padding: 24px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+.student-card {
+    background: #1e293b;
+    padding: 16px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.student-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+.action-btn {
+    margin-right: 8px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+.green { background: #22c55e; }
+.purple { background: #8b5cf6; }
+.red { background: #ef4444; }
+.orange { background: orange; }
+.teal { background: #0d9488; }
+
+.samples-badge {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+.student-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+</style>
+
+<h1 style="margin-bottom:20px;">Class Panel</h1>
+
+<div class="panel-card">
+    <h2>Add Student Face</h2>
+    <form action="/add_student/{{ class_id }}" method="POST" style="display:flex; gap:10px; align-items:center;">
+        <input type="text" name="name" placeholder="Student Name" required>
+        <button type="submit" class="action-btn green">Register Face</button>
+    </form>
+    <p style="font-size:12px; color:#94a3b8; margin-top:8px;">
+        Capture only {{ registration_samples }} normal-face frames. The system will also try to match the same student later with a mask or glasses.
+    </p>
+</div>
+
+<div class="panel-card">
+    <h2>Actions</h2>
+    <a href="/take_attendance/{{ class_id }}">
+        <button class="action-btn green">Take Attendance</button>
+    </a>
+    <a href="/graph/{{ class_id }}">
+        <button class="action-btn purple">Attendance Graph</button>
+    </a>
+    <a href="/defaulters/{{ class_id }}">
+        <button class="action-btn red">Defaulters</button>
+    </a>
+    <a href="/export_excel/{{ class_id }}">
+        <button class="action-btn purple">Export Excel</button>
+    </a>
+</div>
+
+<h2>Students</h2>
+
+<div class="grid">
+{% for student in students %}
+<div class="student-card">
+    <div class="student-left">
+        <div class="avatar">{{ student["name"][0] }}</div>
+        <div>
+            <strong>{{ student["name"] }}</strong>
+            <div class="samples-badge">{{ student["sample_count"] }} face samples</div>
+        </div>
+    </div>
+
+    <div class="student-btns">
+        <a href="/student_report/{{ student['id'] }}">
+            <button class="action-btn purple">Report</button>
+        </a>
+
+        <form action="/delete_student/{{ student['id'] }}"
+              method="POST" style="display:inline;"
+              onsubmit="return confirm('Delete this student?');">
+            <button type="submit" class="action-btn red">Delete</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+<br>
+<a href="/dashboard">Back to Dashboard</a>
+
+{% endblock %}

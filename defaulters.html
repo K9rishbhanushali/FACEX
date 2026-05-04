@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Defaulters</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10; --card: #121929; --border: #1c2740;
+    --accent: #00d4ff; --accent2: #7c3aed;
+    --green: #00e5a0; --red: #ff4f6a; --yellow: #ffd060;
+    --text: #e2e8f5; --muted: #4a5878;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 40px 20px; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px; pointer-events: none; z-index: 0;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.12; }
+  .orb-1 { width: 500px; height: 500px; background: var(--red); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; left: -80px; }
+  .page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+
+  .back-link { color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s; margin-bottom: 16px; }
+  .back-link:hover { color: var(--accent); }
+  .eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.4rem,5vw,3.8rem); letter-spacing: 0.04em; background: linear-gradient(135deg, #fff 30%, var(--red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 10px; }
+
+  .summary { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 32px; }
+  .chip { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 22px; position: relative; overflow: hidden; min-width: 150px; }
+  .chip::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--c, var(--red)); }
+  .chip-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .chip-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--c, var(--red)); line-height: 1; }
+
+  /* Empty state */
+  .empty { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 60px 40px; text-align: center; }
+  .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+  .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--green); margin-bottom: 8px; }
+  .empty-sub { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+
+  /* Table */
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .table-header { padding: 16px 22px; font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .table-header span { width: 6px; height: 6px; border-radius: 50%; background: var(--red); box-shadow: 0 0 8px var(--red); display: inline-block; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 12px 20px; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,79,106,0.04); }
+  td { padding: 14px 20px; font-size: 0.88rem; }
+
+  .stu-name { font-weight: 600; }
+  .mono { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .pct-cell { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--red); }
+
+  .pct-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .pct-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--red), #ff9b9b); width: 0; transition: width 1s ease; }
+
+  .btn { padding: 11px 22px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 0.8rem; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin-top: 24px; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="page">
+
+  <a class="back-link" href="/class/{{ class_id }}">← Back to Class</a>
+  <div class="eyebrow">⚠ Alert</div>
+  <h1>Defaulters List</h1>
+
+  <!-- Summary chips -->
+  <div class="summary">
+    <div class="chip" style="--c: var(--red);">
+      <div class="chip-label">Defaulters</div>
+      <div class="chip-value">{{ defaulters | length }}</div>
+    </div>
+    <div class="chip" style="--c: var(--accent2);">
+      <div class="chip-label">Total Lectures</div>
+      <div class="chip-value">{{ total_lectures }}</div>
+    </div>
+    <div class="chip" style="--c: var(--yellow);">
+      <div class="chip-label">Threshold</div>
+      <div class="chip-value">75%</div>
+    </div>
+  </div>
+
+  {% if defaulters | length == 0 %}
+  <!-- Empty state -->
+  <div class="empty">
+    <div class="empty-icon">🎉</div>
+    <div class="empty-title">{% if total_lectures == 0 %}No Attendance Yet{% else %}No Defaulters!{% endif %}</div>
+    <div class="empty-sub">{% if total_lectures == 0 %}Take attendance at least once to see the defaulters report.{% else %}All students have attendance above 75%{% endif %}</div>
+  </div>
+
+  {% else %}
+  <!-- Defaulters Table -->
+  <div class="table-card">
+    <div class="table-header"><span></span> Students Below 75% Attendance</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student Name</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Total</th>
+          <th>Attendance %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in defaulters %}
+        <tr>
+          <td class="mono" style="color: var(--muted);">{{ loop.index }}</td>
+          <td><div class="stu-name">{{ d.name }}</div></td>
+          <td class="mono" style="color: var(--green);">{{ d.present }}</td>
+          <td class="mono" style="color: var(--red);">{{ d.absent }}</td>
+          <td class="mono" style="color: var(--muted);">{{ d.total }}</td>
+          <td>
+            <div class="pct-cell">{{ d.percentage }}%</div>
+            <div class="pct-bar-bg">
+              <div class="pct-bar" data-pct="{{ d.percentage }}"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <a class="btn btn-ghost" href="/class/{{ class_id }}">← Back to Class</a>
+
+</div>
+
+<script>
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    document.querySelectorAll(".pct-bar").forEach(b => {
+      b.style.width = b.dataset.pct + "%";
+    });
+  }, 300);
+});
+</script>
+</body>
+</html>
